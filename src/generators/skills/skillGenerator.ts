@@ -2,7 +2,8 @@
  * Skill Generator
  *
  * Scaffolds skill directories and SKILL.md files.
- * Generates frontmatter-only files (scaffold v2) for AI to fill.
+ * Generates frontmatter + default content (from scaffold structures) or
+ * frontmatter-only for custom skills without a structure.
  */
 
 import * as fs from 'fs';
@@ -22,6 +23,7 @@ import {
   createSkillFrontmatter,
   serializeFrontmatter,
 } from '../../types/scaffoldFrontmatter';
+import { getScaffoldStructure, serializeStructureAsMarkdown } from '../shared/scaffoldStructures';
 
 export interface SkillGeneratorOptions {
   /** Repository path */
@@ -97,14 +99,19 @@ export class SkillGenerator {
         phases = getDefaultPhases(skillName);
       }
 
-      // Create frontmatter-only content
+      // Create frontmatter + body (with default content from scaffold structure when available)
       const frontmatter = createSkillFrontmatter(
         this.formatSkillTitle(skillName),
         description,
         skillName,
         { phases }
       );
-      const content = serializeFrontmatter(frontmatter) + '\n';
+      let content = serializeFrontmatter(frontmatter) + '\n';
+
+      const structure = getScaffoldStructure(skillName);
+      if (structure) {
+        content += serializeStructureAsMarkdown(structure);
+      }
 
       // Write SKILL.md
       fs.writeFileSync(skillPath, content, 'utf-8');
