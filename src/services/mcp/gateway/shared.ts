@@ -1,3 +1,5 @@
+import type { AgentEventCallbacks } from '../../ai/agentEvents';
+
 /**
  * Shared Utilities for Gateway Handlers
  *
@@ -17,6 +19,7 @@ export const minimalUI = {
   displayWarning: () => {},
   displayWelcome: () => {},
   displayPrevcExplanation: () => {},
+  displayProjectInfo: () => {},
   displayStep: () => {},
   displayBox: () => {},
   startSpinner: () => {},
@@ -24,6 +27,7 @@ export const minimalUI = {
   updateSpinner: () => {},
   prompt: async () => '',
   confirm: async () => true,
+  createAgentCallbacks: (): AgentEventCallbacks => ({}),
 };
 
 /**

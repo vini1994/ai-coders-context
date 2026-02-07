@@ -148,7 +148,7 @@ export class AIContextMCPServer {
     this.server.registerTool('context', {
       description: `Context scaffolding and semantic context. Actions:
 - check: Check if .context scaffolding exists (params: repoPath?)
-- init: Initialize .context scaffolding (params: repoPath?, type?, outputDir?, semantic?, autoFill?, skipContentGeneration?)
+- init: Initialize .context scaffolding and fill skills (params: repoPath?, type?, outputDir?, semantic?, autoFill?, skipContentGeneration?, fillSkills?)
 - fill: Fill scaffolding with AI content (params: repoPath?, outputDir?, target?, offset?, limit?)
 - fillSingle: Fill a single scaffold file (params: repoPath?, filePath)
 - listToFill: List files that need filling (params: repoPath?, outputDir?, target?)
@@ -180,6 +180,10 @@ export class AIContextMCPServer {
           .describe('(init, scaffoldPlan) Auto-fill with codebase content'),
         skipContentGeneration: z.boolean().optional()
           .describe('(init) Skip pre-generating content'),
+        fillSkills: z.boolean().optional()
+          .describe('(init) Fill generated skills with AI after scaffold (default: true)'),
+        includeContentStubs: z.boolean().optional()
+          .describe('(init) Include section headings in docs/agents when not autoFilling (default: true)'),
         target: z.enum(['docs', 'agents', 'plans', 'all']).optional()
           .describe('(fill, listToFill) Which scaffolding to target'),
         offset: z.number().optional()

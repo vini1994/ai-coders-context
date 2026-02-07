@@ -332,6 +332,8 @@ export const InitializeContextInputSchema = z.object({
     .describe('Generate all agents/docs regardless of project type'),
   autoFill: z.boolean().default(true).optional()
     .describe('Automatically fill scaffolding with codebase-aware content (default: true)'),
+  includeContentStubs: z.boolean().default(true).optional()
+    .describe('Include section headings and guidance when not autoFilling (default: true)'),
   skipContentGeneration: z.boolean().default(true).optional()
     .describe('Skip pre-generating content for MCP to reduce response size. Use fillSingleFile or fillScaffolding tools to generate content on demand. (default: true)'),
   generateQA: z.boolean().default(true).optional()

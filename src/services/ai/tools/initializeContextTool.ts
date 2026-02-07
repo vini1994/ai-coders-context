@@ -33,6 +33,7 @@ The AI agent MUST then fill each generated file using the provided context and i
       projectType: overrideProjectType,
       disableFiltering = false,
       autoFill = true,
+      includeContentStubs = true,
       skipContentGeneration = true, // Default true to reduce response size
       generateQA = true,
       generateSkills = true,
@@ -93,24 +94,24 @@ The AI agent MUST then fill each generated file using the provided context and i
       let docsGenerated = 0;
       let agentsGenerated = 0;
 
-      // Generate documentation scaffolding
+      // Generate documentation scaffolding (with autoFill/includeContentStubs like CLI init)
       if (scaffoldDocs) {
         const docGenerator = new DocumentationGenerator();
         docsGenerated = await docGenerator.generateDocumentation(
           repoStructure,
           outputDir,
-          { semantic, filteredDocs },
+          { semantic, filteredDocs, includeContentStubs, autoFill },
           false // verbose
         );
       }
 
-      // Generate agent scaffolding
+      // Generate agent scaffolding (with autoFill/includeContentStubs like CLI init)
       if (scaffoldAgents) {
         const agentGenerator = new AgentGenerator();
         agentsGenerated = await agentGenerator.generateAgentPrompts(
           repoStructure,
           outputDir,
-          { semantic, filteredAgents },
+          { semantic, filteredAgents, includeContentStubs, autoFill },
           false // verbose
         );
       }

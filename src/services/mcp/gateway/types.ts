@@ -46,6 +46,10 @@ export interface ContextParams {
   exclude?: string[];
   autoFill?: boolean;
   skipContentGeneration?: boolean;
+  /** When true (default), fill generated skills with AI after init (same as CLI skill fill) */
+  fillSkills?: boolean;
+  /** Include section headings/guidance in docs and agents when not autoFilling (default: true) */
+  includeContentStubs?: boolean;
   target?: 'docs' | 'agents' | 'plans' | 'all';
   offset?: number;
   limit?: number;

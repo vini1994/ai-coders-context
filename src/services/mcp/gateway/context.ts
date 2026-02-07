@@ -8,6 +8,7 @@
  * New actions: searchQA, generateQA, getFlow, detectPatterns
  */
 
+import * as path from 'path';
 import {
   checkScaffoldingTool,
   initializeContextTool,
@@ -20,11 +21,15 @@ import {
 import { SemanticContextBuilder, type ContextFormat } from '../../semantic/contextBuilder';
 import { CodebaseAnalyzer } from '../../semantic/codebaseAnalyzer';
 import { QAService } from '../../qa';
+import { SkillFillService } from '../../fill/skillFillService';
+import { VERSION } from '../../../version';
+import { DEFAULT_MODELS } from '../../ai/providerFactory';
+import type { CLIInterface } from '../../../utils/cliUI';
 
 import type { ContextParams } from './types';
 import type { MCPToolResponse } from './response';
 import { createJsonResponse, createErrorResponse, createTextResponse, createScaffoldResponse } from './response';
-import { toolContext } from './shared';
+import { toolContext, minimalUI, mockTranslate } from './shared';
 
 export interface ContextOptions {
   repoPath: string;
@@ -51,7 +56,7 @@ export async function handleContext(
       }
 
       case 'init': {
-        const result = await initializeContextTool.execute!(
+        const rawResult = await initializeContextTool.execute!(
           {
             repoPath,
             type: params.type,
@@ -60,13 +65,38 @@ export async function handleContext(
             include: params.include,
             exclude: params.exclude,
             autoFill: params.autoFill,
+            includeContentStubs: params.includeContentStubs,
             skipContentGeneration: params.skipContentGeneration
           },
           toolContext
         );
 
+        const result = { ...(rawResult as Record<string, unknown>) };
+        const skillsGenerated = (result.skillsGenerated as number) ?? (result._metadata as Record<string, unknown> | undefined)?.skillsGenerated as number | undefined ?? 0;
+        const outputDir = (result.outputDir as string) ?? path.resolve(repoPath, '.context');
+
+        // Fill generated skills with AI (same as CLI "skill fill") when requested
+        if (skillsGenerated > 0 && params.fillSkills !== false) {
+          try {
+            const skillFillService = new SkillFillService({
+              ui: minimalUI as unknown as CLIInterface,
+              t: mockTranslate,
+              version: VERSION,
+              defaultModel: DEFAULT_MODELS.google,
+            });
+            const fillResult = await skillFillService.run(repoPath, { output: outputDir });
+            result.skillsFilled = fillResult.filled.length;
+            result.skillsFilledList = fillResult.filled;
+            result.skillFillSkipped = fillResult.skipped;
+            result.skillFillFailed = fillResult.failed;
+            result.skillFillModel = fillResult.model;
+          } catch (err) {
+            result.skillFillError = err instanceof Error ? err.message : String(err);
+          }
+        }
+
         // Extract pending files from result for scaffold response
-        const pendingWrites = (result as Record<string, unknown>).pendingWrites as Array<{ filePath: string }> | undefined;
+        const pendingWrites = result.pendingWrites as Array<{ filePath: string }> | undefined;
         if (pendingWrites && pendingWrites.length > 0) {
           const enhancementPrompt = `SCAFFOLDING CREATED - CONTENT REQUIRED
 
@@ -80,7 +110,7 @@ Step 2: Use workflow-init with name parameter to create workflow (creates .conte
 
 Skip workflow-init ONLY if making trivial changes (typos, single-line edits).`;
 
-          return createScaffoldResponse(result as Record<string, unknown>, {
+          return createScaffoldResponse(result, {
             filesGenerated: pendingWrites.length,
             pendingFiles: pendingWrites.map(p => p.filePath),
             enhancementPrompt,
@@ -94,7 +124,7 @@ Skip workflow-init ONLY if making trivial changes (typos, single-line edits).`;
         }
 
         // If no pending files, still suggest workflow initialization
-        const responseData = result as Record<string, unknown>;
+        const responseData = result;
         const enhancementPrompt = `✓ SCAFFOLDING READY
 
 RECOMMENDED NEXT ACTION:
