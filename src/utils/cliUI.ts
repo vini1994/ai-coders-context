@@ -180,7 +180,12 @@ export class CLIInterface {
     console.log('');
   }
 
-  displayGenerationSummary(docsGenerated: number, agentsGenerated: number, skillsGenerated?: number): void {
+  displayGenerationSummary(
+    docsGenerated: number,
+    agentsGenerated: number,
+    skillsGenerated?: number,
+    commandsGenerated?: number
+  ): void {
     const elapsed = ((Date.now() - this.startTime) / 1000).toFixed(1);
 
     console.log('');
@@ -191,6 +196,9 @@ export class CLIInterface {
     console.log(typography.labeledValue(this.t('ui.generationSummary.agents'), `${agentsGenerated} playbooks`));
     if (skillsGenerated !== undefined && skillsGenerated > 0) {
       console.log(typography.labeledValue(this.t('ui.generationSummary.skills'), `${skillsGenerated} skills`));
+    }
+    if (commandsGenerated !== undefined && commandsGenerated > 0) {
+      console.log(typography.labeledValue(this.t('ui.generationSummary.commands'), `${commandsGenerated} commands`));
     }
     console.log(typography.labeledValue(this.t('ui.generationSummary.timeElapsed'), `${elapsed}s`));
     console.log('');

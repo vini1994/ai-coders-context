@@ -220,12 +220,7 @@ export class SkillExportService {
     const skillDir = path.join(targetPath, skill.slug);
     const skillFile = path.join(skillDir, 'SKILL.md');
 
-    // Check if exists and force not set
-    if (await pathExists(skillFile) && !options.force) {
-      result.filesSkipped++;
-      return;
-    }
-
+    // Sempre escrever (criar ou atualizar) para o destino ficar igual à origem
     // Create skill directory
     await ensureDirectory(skillDir);
 

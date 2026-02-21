@@ -18,6 +18,7 @@ import {
 } from '../../types/scaffoldFrontmatter';
 import { getScaffoldStructure, ScaffoldStructure, serializeStructureAsMarkdown } from '../shared/scaffoldStructures';
 import { AutoFillService, AutoFillContext } from '../../services/autoFill';
+import { needsFill } from '../../utils/frontMatter';
 
 /**
  * Category mapping from document name to frontmatter category.
@@ -130,9 +131,13 @@ export class DocumentationGenerator {
 
     // Generate README.md index (still uses template rendering for summary)
     const readmePath = path.join(docsDir, 'README.md');
-    const readmeContent = renderIndex(context);
-    await GeneratorUtils.writeFileWithLogging(readmePath, readmeContent, verbose, 'Created README.md');
-    created += 1;
+    const readmeExists = await fs.pathExists(readmePath);
+    const skipReadme = readmeExists && !(await needsFill(readmePath));
+    if (!skipReadme) {
+      const readmeContent = renderIndex(context);
+      await GeneratorUtils.writeFileWithLogging(readmePath, readmeContent, verbose, 'Created README.md');
+      created += 1;
+    }
 
     // Generate frontmatter-only files for each guide (scaffold v2)
     for (const guide of guidesToGenerate) {
@@ -143,6 +148,12 @@ export class DocumentationGenerator {
 
       const filename = `${guide.key}.md`;
       const targetPath = path.join(docsDir, filename);
+      const fileExists = await fs.pathExists(targetPath);
+      const skipFilled = fileExists && !(await needsFill(targetPath));
+      if (skipFilled) {
+        continue;
+      }
+
       const frontmatter = createDocFrontmatter(
         guide.key,
         docInfo.description,

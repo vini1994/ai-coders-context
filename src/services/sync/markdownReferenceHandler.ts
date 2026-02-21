@@ -21,14 +21,6 @@ export async function createMarkdownReferences(
     try {
       const exists = await fs.pathExists(refPath);
 
-      if (exists && !options.force) {
-        result.filesSkipped++;
-        if (options.verbose) {
-          console.log(`  Skipped (exists): ${refPath}`);
-        }
-        continue;
-      }
-
       if (!options.dryRun) {
         const relativePath = path.relative(targetPath, agent.sourcePath);
         const content = generateReferenceMarkdown(agent, relativePath, sourcePath);
@@ -38,7 +30,7 @@ export async function createMarkdownReferences(
       result.filesCreated++;
 
       if (options.verbose) {
-        console.log(`  Created: ${refPath}`);
+        console.log(`  ${exists ? 'Updated' : 'Created'}: ${refPath}`);
       }
     } catch (error) {
       result.filesFailed++;

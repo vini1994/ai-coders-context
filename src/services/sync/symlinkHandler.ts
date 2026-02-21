@@ -21,15 +21,8 @@ export async function createSymlinks(
     try {
       const exists = await fs.pathExists(linkPath);
 
-      if (exists && !options.force) {
-        result.filesSkipped++;
-        if (options.verbose) {
-          console.log(`  Skipped (exists): ${linkPath}`);
-        }
-        continue;
-      }
-
-      if (exists && options.force) {
+      // Sempre atualizar: remover destino existente para recriar (mantém sync = espelho da origem)
+      if (exists) {
         if (!options.dryRun) {
           await fs.remove(linkPath);
         }

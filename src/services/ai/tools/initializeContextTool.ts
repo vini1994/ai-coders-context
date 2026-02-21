@@ -6,6 +6,7 @@ import { FileMapper } from '../../../utils/fileMapper';
 import { DocumentationGenerator } from '../../../generators/documentation/documentationGenerator';
 import { AgentGenerator } from '../../../generators/agents/agentGenerator';
 import { SkillGenerator } from '../../../generators/skills/skillGenerator';
+import { generateCommands } from '../../../generators/commands';
 import {
   StackDetector,
   classifyProject,
@@ -128,6 +129,17 @@ The AI agent MUST then fill each generated file using the provided context and i
           skillsGenerated = skillResult.generatedSkills.length;
         } catch {
           // Skills generation is optional, continue if it fails
+        }
+      }
+
+      // Generate slash commands (e.g. init-mcp-only for .cursor/commands and .agent/workflows)
+      let commandsGenerated = 0;
+      if (scaffoldDocs || scaffoldAgents) {
+        try {
+          const cmdResult = await generateCommands(outputDir, { force: false });
+          commandsGenerated = cmdResult.generated.length;
+        } catch {
+          // Commands generation is optional
         }
       }
 
@@ -259,6 +271,7 @@ DO NOT say "initialization complete" until ALL files are filled.`
             docsGenerated,
             agentsGenerated,
             skillsGenerated,
+            commandsGenerated,
             qaGenerated,
             outputDir,
             classification: classification ? {
@@ -272,6 +285,7 @@ DO NOT say "initialization complete" until ALL files are filled.`
           docsGenerated,
           agentsGenerated,
           skillsGenerated,
+          commandsGenerated,
           qaGenerated,
           outputDir,
           classification: classification ? {
@@ -339,6 +353,7 @@ DO NOT say "initialization complete" until ALL files are filled.`
           docsGenerated,
           agentsGenerated,
           skillsGenerated,
+          commandsGenerated,
           qaGenerated,
           outputDir,
           classification: classification ? {
@@ -352,6 +367,7 @@ DO NOT say "initialization complete" until ALL files are filled.`
         docsGenerated,
         agentsGenerated,
         skillsGenerated,
+        commandsGenerated,
         qaGenerated,
         outputDir,
         classification: classification ? {

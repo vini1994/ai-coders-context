@@ -7,6 +7,7 @@ import { FileMapper } from '../../utils/fileMapper';
 import { DocumentationGenerator } from '../../generators/documentation/documentationGenerator';
 import { AgentGenerator } from '../../generators/agents/agentGenerator';
 import { SkillGenerator } from '../../generators/skills/skillGenerator';
+import { generateCommands } from '../../generators/commands';
 import { StackDetector, classifyProject, getFilteredScaffolds } from '../stack';
 import type { CLIInterface } from '../../utils/cliUI';
 import type { TranslateFn, TranslationKey } from '../../utils/i18n';
@@ -89,7 +90,7 @@ export class InitService {
     }
 
     await this.ensurePaths(options);
-    await this.confirmOverwriteIfNeeded(options);
+    const skipOverwrites = await this.confirmOverwriteIfNeeded(options);
 
     this.ui.displayWelcome(this.version);
     this.ui.displayProjectInfo(options.repoPath, options.outputDir, resolvedType);
@@ -108,56 +109,64 @@ export class InitService {
       'success'
     );
 
-    const { docsGenerated, agentsGenerated, skillsGenerated } = await this.generateScaffolds(options, repoStructure);
+    const { docsGenerated, agentsGenerated, skillsGenerated, commandsGenerated } =
+      await this.generateScaffolds(options, repoStructure, skipOverwrites);
 
-    this.ui.displayGenerationSummary(docsGenerated, agentsGenerated, skillsGenerated);
+    this.ui.displayGenerationSummary(docsGenerated, agentsGenerated, skillsGenerated, commandsGenerated);
     this.ui.displaySuccess(this.t('success.scaffold.ready', { path: colors.accent(options.outputDir) }));
   }
 
-  private async confirmOverwriteIfNeeded(options: InitOptions): Promise<void> {
-    const prompts: Array<{ key: 'docs' | 'agents' | 'skills'; path: string }> = [];
+  private async confirmOverwriteIfNeeded(
+    options: InitOptions
+  ): Promise<{ skipDocs: boolean; skipAgents: boolean; skipSkills: boolean }> {
+    const skipOverwrites = { skipDocs: false, skipAgents: false, skipSkills: false };
 
     if (options.scaffoldDocs) {
       const docsPath = path.join(options.outputDir, 'docs');
       if (await this.directoryHasContent(docsPath)) {
-        prompts.push({ key: 'docs', path: docsPath });
+        const answer = await inquirer.prompt<{ overwrite: boolean }>([
+          {
+            type: 'confirm',
+            name: 'overwrite',
+            default: false,
+            message: this.t('prompts.init.confirmOverwriteDocs', { path: docsPath })
+          }
+        ]);
+        if (!answer.overwrite) skipOverwrites.skipDocs = true;
       }
     }
 
     if (options.scaffoldAgents) {
       const agentsPath = path.join(options.outputDir, 'agents');
       if (await this.directoryHasContent(agentsPath)) {
-        prompts.push({ key: 'agents', path: agentsPath });
+        const answer = await inquirer.prompt<{ overwrite: boolean }>([
+          {
+            type: 'confirm',
+            name: 'overwrite',
+            default: false,
+            message: this.t('prompts.init.confirmOverwriteAgents', { path: agentsPath })
+          }
+        ]);
+        if (!answer.overwrite) skipOverwrites.skipAgents = true;
       }
     }
 
     if (options.scaffoldSkills) {
       const skillsPath = path.join(options.outputDir, 'skills');
       if (await this.directoryHasContent(skillsPath)) {
-        prompts.push({ key: 'skills', path: skillsPath });
+        const answer = await inquirer.prompt<{ overwrite: boolean }>([
+          {
+            type: 'confirm',
+            name: 'overwrite',
+            default: false,
+            message: this.t('prompts.init.confirmOverwriteSkills', { path: skillsPath })
+          }
+        ]);
+        if (!answer.overwrite) skipOverwrites.skipSkills = true;
       }
     }
 
-    for (const prompt of prompts) {
-      const questionKey: TranslationKey = prompt.key === 'docs'
-        ? 'prompts.init.confirmOverwriteDocs'
-        : prompt.key === 'agents'
-        ? 'prompts.init.confirmOverwriteAgents'
-        : 'prompts.init.confirmOverwriteSkills';
-
-      const answer = await inquirer.prompt<{ overwrite: boolean }>([
-        {
-          type: 'confirm',
-          name: 'overwrite',
-          default: false,
-          message: this.t(questionKey, { path: prompt.path })
-        }
-      ]);
-
-      if (!answer.overwrite) {
-        throw new Error(this.t('errors.init.overwriteDeclined'));
-      }
-    }
+    return skipOverwrites;
   }
 
   private async directoryHasContent(dirPath: string): Promise<boolean> {
@@ -170,12 +179,21 @@ export class InitService {
     return entries.length > 0;
   }
 
-  private async generateScaffolds(options: InitOptions, repoStructure: RepoStructure): Promise<{ docsGenerated: number; agentsGenerated: number; skillsGenerated: number }> {
+  private async generateScaffolds(
+    options: InitOptions,
+    repoStructure: RepoStructure,
+    skipOverwrites: { skipDocs: boolean; skipAgents: boolean; skipSkills: boolean }
+  ): Promise<{ docsGenerated: number; agentsGenerated: number; skillsGenerated: number; commandsGenerated: number }> {
     let docsGenerated = 0;
     let agentsGenerated = 0;
     let skillsGenerated = 0;
+    let commandsGenerated = 0;
     let currentStep = 1;
-    const totalSteps = (options.scaffoldDocs ? 1 : 0) + (options.scaffoldAgents ? 1 : 0) + (options.scaffoldSkills ? 1 : 0);
+    const totalSteps =
+      (options.scaffoldDocs && !skipOverwrites.skipDocs ? 1 : 0) +
+      (options.scaffoldAgents && !skipOverwrites.skipAgents ? 1 : 0) +
+      (options.scaffoldSkills && !skipOverwrites.skipSkills ? 1 : 0) +
+      1; // commands when docs or agents
 
     // Detect project type for filtering scaffolds
     let filteredDocs: string[] | undefined;
@@ -191,7 +209,7 @@ export class InitService {
       // If classification fails, use all scaffolds (no filtering)
     }
 
-    if (options.scaffoldDocs) {
+    if (options.scaffoldDocs && !skipOverwrites.skipDocs) {
       this.ui.displayStep(currentStep, totalSteps, this.t('steps.init.docs'));
       this.ui.startSpinner(options.semantic
         ? this.t('spinner.docs.creatingWithSemantic')
@@ -212,7 +230,7 @@ export class InitService {
       currentStep++;
     }
 
-    if (options.scaffoldAgents) {
+    if (options.scaffoldAgents && !skipOverwrites.skipAgents) {
       this.ui.displayStep(currentStep, totalSteps, this.t('steps.init.agents'));
       this.ui.startSpinner(options.semantic
         ? this.t('spinner.agents.creatingWithSemantic')
@@ -233,7 +251,7 @@ export class InitService {
       currentStep++;
     }
 
-    if (options.scaffoldSkills) {
+    if (options.scaffoldSkills && !skipOverwrites.skipSkills) {
       this.ui.displayStep(currentStep, totalSteps, this.t('steps.init.skills'));
       this.ui.startSpinner(this.t('spinner.skills.creating'));
       try {
@@ -248,9 +266,23 @@ export class InitService {
         // Skills generation is optional, continue if it fails
       }
       this.ui.updateSpinner(this.t('spinner.skills.created', { count: skillsGenerated }), 'success');
+      currentStep++;
     }
 
-    return { docsGenerated, agentsGenerated, skillsGenerated };
+    // Slash commands (e.g. init-mcp-only) for .cursor/commands and .agent/workflows
+    if (options.scaffoldDocs || options.scaffoldAgents) {
+      this.ui.displayStep(currentStep, totalSteps, this.t('steps.init.commands'));
+      this.ui.startSpinner(this.t('spinner.commands.creating'));
+      try {
+        const result = await generateCommands(options.outputDir, { force: false });
+        commandsGenerated = result.generated.length;
+        this.ui.updateSpinner(this.t('spinner.commands.created', { count: commandsGenerated }), 'success');
+      } catch {
+        // Commands generation is optional
+      }
+    }
+
+    return { docsGenerated, agentsGenerated, skillsGenerated, commandsGenerated };
   }
 
   private async ensurePaths(options: InitOptions): Promise<void> {

@@ -2309,6 +2309,7 @@ async function runQuickSync(): Promise<void> {
       choices: [
         { name: t('prompts.quickSync.components.agents'), value: 'agents', checked: true },
         { name: t('prompts.quickSync.components.skills'), value: 'skills', checked: true },
+        { name: t('prompts.quickSync.components.commands'), value: 'commands', checked: true },
         { name: t('prompts.quickSync.components.docs'), value: 'docs', checked: true },
       ],
     },
@@ -2321,6 +2322,7 @@ async function runQuickSync(): Promise<void> {
 
   let agentTargets: string[] | undefined;
   let skillTargets: string[] | undefined;
+  let commandTargets: string[] | undefined;
   let docTargets: string[] | undefined;
 
   // Step 2: If agents selected, choose targets
@@ -2340,7 +2342,7 @@ async function runQuickSync(): Promise<void> {
         ],
       },
     ]);
-    agentTargets = targets.length > 0 ? targets : undefined;
+    agentTargets = targets;
   }
 
   // Step 3: If skills selected, choose targets
@@ -2352,15 +2354,33 @@ async function runQuickSync(): Promise<void> {
         message: t('prompts.quickSync.selectSkillTargets'),
         choices: [
           { name: '.claude/skills (Claude Code)', value: 'claude', checked: true },
+          { name: '.cursor/skills (Cursor AI)', value: 'cursor', checked: true },
           { name: '.gemini/skills (Gemini CLI)', value: 'gemini', checked: true },
           { name: '.codex/skills (Codex CLI)', value: 'codex', checked: true },
+          { name: '.agent/skills (Google Antigravity)', value: 'antigravity', checked: true },
         ],
       },
     ]);
-    skillTargets = targets.length > 0 ? targets : undefined;
+    skillTargets = targets;
   }
 
-  // Step 4: If docs selected, choose targets
+  // Step 4: If commands selected, choose targets
+  if (components.includes('commands')) {
+    const { targets } = await inquirer.prompt<{ targets: string[] }>([
+      {
+        type: 'checkbox',
+        name: 'targets',
+        message: t('prompts.quickSync.selectCommandTargets'),
+        choices: [
+          { name: '.cursor/commands (Cursor AI)', value: 'cursor', checked: true },
+          { name: '.agent/workflows (Google Antigravity)', value: 'antigravity', checked: true },
+        ],
+      },
+    ]);
+    commandTargets = targets;
+  }
+
+  // Step 5: If docs selected, choose targets
   if (components.includes('docs')) {
     const { targets } = await inquirer.prompt<{ targets: string[] }>([
       {
@@ -2377,16 +2397,18 @@ async function runQuickSync(): Promise<void> {
         ],
       },
     ]);
-    docTargets = targets.length > 0 ? targets : undefined;
+    docTargets = targets;
   }
 
   // Build options based on selections
   const options: QuickSyncOptions = {
     skipAgents: !components.includes('agents'),
     skipSkills: !components.includes('skills'),
+    skipCommands: !components.includes('commands'),
     skipDocs: !components.includes('docs'),
     agentTargets,
     skillTargets,
+    commandTargets,
     docTargets,
     force: false,
     dryRun: false,

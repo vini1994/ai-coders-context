@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as fs from 'fs-extra';
 import { RepoStructure } from '../../types';
 import { GeneratorUtils } from '../shared';
 import { AGENT_TYPES, AgentType } from './agentTypes';
@@ -15,6 +16,7 @@ import { PrevcPhase } from '../../workflow/types';
 import { getScaffoldStructure, serializeStructureAsMarkdown } from '../shared/scaffoldStructures';
 import { AutoFillService, AutoFillContext } from '../../services/autoFill';
 import { StackDetector, StackInfo } from '../../services/stack';
+import { needsFill } from '../../utils/frontMatter';
 
 interface AgentContext {
   topLevelDirectories: string[];
@@ -129,6 +131,13 @@ export class AgentGenerator {
 
     // Generate frontmatter-only files for each agent (scaffold v2)
     for (const agentType of agentTypes) {
+      const filePath = path.join(agentsDir, `${agentType}.md`);
+      const fileExists = await fs.pathExists(filePath);
+      const skipFilled = fileExists && !(await needsFill(filePath));
+      if (skipFilled) {
+        continue;
+      }
+
       const title = formatAgentTitle(agentType);
       const responsibilities = AGENT_RESPONSIBILITIES[agentType] || [];
       const description = responsibilities[0] || `${title} agent playbook`;
@@ -161,16 +170,19 @@ export class AgentGenerator {
         }
       }
 
-      const filePath = path.join(agentsDir, `${agentType}.md`);
       await GeneratorUtils.writeFileWithLogging(filePath, content, verbose, `Created ${agentType}.md`);
       created += 1;
     }
 
     // Generate README.md index
     const indexPath = path.join(agentsDir, 'README.md');
-    const indexContent = renderAgentIndex(agentTypes);
-    await GeneratorUtils.writeFileWithLogging(indexPath, indexContent, verbose, 'Created README.md');
-    created += 1;
+    const indexExists = await fs.pathExists(indexPath);
+    const skipIndex = indexExists && !(await needsFill(indexPath));
+    if (!skipIndex) {
+      const indexContent = renderAgentIndex(agentTypes);
+      await GeneratorUtils.writeFileWithLogging(indexPath, indexContent, verbose, 'Created README.md');
+      created += 1;
+    }
 
     return created;
   }

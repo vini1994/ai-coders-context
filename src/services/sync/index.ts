@@ -14,3 +14,7 @@ export type {
 export { TARGET_PRESETS, resolvePresets, getPresetByPath, getAllPresetNames } from './presets';
 export { createSymlinks, checkSymlinkSupport } from './symlinkHandler';
 export { createMarkdownReferences } from './markdownReferenceHandler';
+export {
+  toAntigravityFilename,
+  toAntigravityWorkflowContent,
+} from './antigravityWorkflowFormat';

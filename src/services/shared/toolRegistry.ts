@@ -16,6 +16,8 @@ export interface ToolCapabilities {
   rules: boolean;
   agents: boolean;
   skills: boolean;
+  /** Slash commands / workflows (e.g. .cursor/commands, .agent/workflows) */
+  commands: boolean;
 }
 
 export interface ToolPaths {
@@ -37,6 +39,11 @@ export interface ToolPaths {
   skillsExport?: string;
   /** Import patterns for skills detection */
   skillsImport?: string[];
+
+  /** Export path for slash commands / workflows (e.g. .cursor/commands, .agent/workflows) */
+  commandsExport?: string;
+  /** Import patterns for commands detection */
+  commandsImport?: string[];
 }
 
 export interface ToolDefinition {
@@ -66,7 +73,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'claude',
     displayName: 'Claude Code',
     directoryPrefix: '.claude',
-    capabilities: { rules: true, agents: true, skills: true },
+    capabilities: { rules: true, agents: true, skills: true, commands: false },
     paths: {
       rulesExport: 'CLAUDE.md',
       rulesFormat: 'single',
@@ -86,7 +93,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'cursor',
     displayName: 'Cursor AI',
     directoryPrefix: '.cursor',
-    capabilities: { rules: true, agents: true, skills: false },
+    capabilities: { rules: true, agents: true, skills: true, commands: true },
     paths: {
       rulesExport: '.cursor/rules',
       rulesFormat: 'directory',
@@ -94,6 +101,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
       rulesImportPaths: ['.cursorrules', '.cursor/.cursorrules', '.cursor/rules'],
       agentsExport: '.cursor/agents',
       agentsImport: ['**/.cursor/agents/**/*.md'],
+      skillsExport: '.cursor/skills',
+      skillsImport: ['**/.cursor/skills/*/SKILL.md', '**/.cursor/skills/**/*.md'],
+      commandsExport: '.cursor/commands',
+      commandsImport: ['**/.cursor/commands/**/*.md'],
     },
     description: 'Cursor AI rules and agents',
     specialFiles: ['.cursorrules'],
@@ -104,7 +115,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'github',
     displayName: 'GitHub Copilot',
     directoryPrefix: '.github',
-    capabilities: { rules: true, agents: true, skills: false },
+    capabilities: { rules: true, agents: true, skills: false, commands: false },
     paths: {
       rulesExport: '.github/copilot-instructions.md',
       rulesFormat: 'single',
@@ -121,7 +132,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'windsurf',
     displayName: 'Windsurf (Codeium)',
     directoryPrefix: '.windsurf',
-    capabilities: { rules: true, agents: true, skills: false },
+    capabilities: { rules: true, agents: true, skills: false, commands: false },
     paths: {
       rulesExport: '.windsurf/rules',
       rulesFormat: 'directory',
@@ -139,7 +150,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'cline',
     displayName: 'Cline',
     directoryPrefix: '.cline',
-    capabilities: { rules: true, agents: true, skills: false },
+    capabilities: { rules: true, agents: true, skills: false, commands: false },
     paths: {
       rulesExport: '.cline/rules',
       rulesFormat: 'directory',
@@ -157,7 +168,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'continue',
     displayName: 'Continue.dev',
     directoryPrefix: '.continue',
-    capabilities: { rules: true, agents: true, skills: false },
+    capabilities: { rules: true, agents: true, skills: false, commands: false },
     paths: {
       rulesExport: '.continue/rules',
       rulesFormat: 'directory',
@@ -175,7 +186,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'antigravity',
     displayName: 'Google Antigravity',
     directoryPrefix: '.agent',
-    capabilities: { rules: true, agents: true, skills: true },
+    capabilities: { rules: true, agents: true, skills: true, commands: true },
     paths: {
       rulesExport: '.agent/rules',
       rulesFormat: 'directory',
@@ -183,8 +194,10 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
       rulesImportPaths: ['.agent/rules', path.join(os.homedir(), '.gemini', 'GEMINI.md')],
       agentsExport: '.agent/agents',
       agentsImport: ['**/.agent/agents/**/*.md'],
-      skillsExport: '.agent/workflows',
-      skillsImport: ['**/.agent/workflows/*/SKILL.md', '**/.agent/workflows/**/*.md'],
+      skillsExport: '.agent/skills',
+      skillsImport: ['**/.agent/skills/*/SKILL.md', '**/.agent/skills/**/*.md'],
+      commandsExport: '.agent/workflows',
+      commandsImport: ['**/.agent/workflows/**/*.md'],
     },
     description: 'Google Antigravity rules directory',
     specialFiles: ['GEMINI.md'],
@@ -195,7 +208,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'trae',
     displayName: 'Trae AI',
     directoryPrefix: '.trae',
-    capabilities: { rules: true, agents: true, skills: false },
+    capabilities: { rules: true, agents: true, skills: false, commands: false },
     paths: {
       rulesExport: '.trae/rules',
       rulesFormat: 'directory',
@@ -212,7 +225,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'gemini',
     displayName: 'Gemini CLI',
     directoryPrefix: '.gemini',
-    capabilities: { rules: false, agents: false, skills: true },
+    capabilities: { rules: false, agents: false, skills: true, commands: false },
     paths: {
       skillsExport: '.gemini/skills',
       skillsImport: ['**/.gemini/skills/*/SKILL.md', '**/.gemini/skills/**/*.md'],
@@ -225,7 +238,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'codex',
     displayName: 'Codex CLI',
     directoryPrefix: '.codex',
-    capabilities: { rules: true, agents: false, skills: true },
+    capabilities: { rules: true, agents: false, skills: true, commands: false },
     paths: {
       rulesExport: '.codex/instructions.md',
       rulesFormat: 'single',
@@ -242,7 +255,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'aider',
     displayName: 'Aider',
     directoryPrefix: '.aider',
-    capabilities: { rules: true, agents: false, skills: false },
+    capabilities: { rules: true, agents: false, skills: false, commands: false },
     paths: {
       rulesExport: 'CONVENTIONS.md',
       rulesFormat: 'single',
@@ -258,7 +271,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'zed',
     displayName: 'Zed Editor',
     directoryPrefix: '.zed',
-    capabilities: { rules: true, agents: false, skills: false },
+    capabilities: { rules: true, agents: false, skills: false, commands: false },
     paths: {
       rulesExport: '.zed/rules',
       rulesFormat: 'directory',
@@ -273,7 +286,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'claude-desktop',
     displayName: 'Claude Desktop',
     directoryPrefix: '.claude-desktop',
-    capabilities: { rules: false, agents: false, skills: false },
+    capabilities: { rules: false, agents: false, skills: false, commands: false },
     paths: {},
     description: 'Claude Desktop MCP configuration',
   },
@@ -283,7 +296,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'vscode',
     displayName: 'VS Code (GitHub Copilot)',
     directoryPrefix: '.vscode',
-    capabilities: { rules: false, agents: false, skills: false },
+    capabilities: { rules: false, agents: false, skills: false, commands: false },
     paths: {},
     description: 'VS Code GitHub Copilot MCP configuration',
   },
@@ -293,7 +306,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'roo',
     displayName: 'Roo Code',
     directoryPrefix: '.roo',
-    capabilities: { rules: false, agents: false, skills: false },
+    capabilities: { rules: false, agents: false, skills: false, commands: false },
     paths: {},
     description: 'Roo Code MCP configuration',
   },
@@ -303,7 +316,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'warp',
     displayName: 'Warp Terminal',
     directoryPrefix: '.warp',
-    capabilities: { rules: false, agents: false, skills: false },
+    capabilities: { rules: false, agents: false, skills: false, commands: false },
     paths: {},
     description: 'Warp Terminal MCP configuration',
   },
@@ -313,7 +326,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'amazonq',
     displayName: 'Amazon Q Developer CLI',
     directoryPrefix: '.amazonq',
-    capabilities: { rules: false, agents: false, skills: false },
+    capabilities: { rules: false, agents: false, skills: false, commands: false },
     paths: {},
     description: 'Amazon Q Developer CLI MCP configuration',
   },
@@ -323,7 +336,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'gemini-cli',
     displayName: 'Gemini CLI',
     directoryPrefix: '.gemini',
-    capabilities: { rules: false, agents: false, skills: false },
+    capabilities: { rules: false, agents: false, skills: false, commands: false },
     paths: {},
     description: 'Gemini CLI MCP configuration',
   },
@@ -333,7 +346,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'kiro',
     displayName: 'Kiro',
     directoryPrefix: '.kiro',
-    capabilities: { rules: false, agents: false, skills: false },
+    capabilities: { rules: false, agents: false, skills: false, commands: false },
     paths: {},
     description: 'Kiro MCP configuration',
   },
@@ -343,7 +356,7 @@ export const TOOL_REGISTRY: ToolDefinition[] = [
     id: 'jetbrains',
     displayName: 'JetBrains IDEs',
     directoryPrefix: '.idea',
-    capabilities: { rules: false, agents: false, skills: false },
+    capabilities: { rules: false, agents: false, skills: false, commands: false },
     paths: {},
     description: 'JetBrains IDEs MCP configuration',
   },
@@ -415,7 +428,7 @@ export function getToolDisplayName(toolId: string): string {
  */
 export function getToolCapabilities(toolId: string): ToolCapabilities {
   const tool = getToolById(toolId);
-  return tool?.capabilities || { rules: false, agents: false, skills: false };
+  return tool?.capabilities || { rules: false, agents: false, skills: false, commands: false };
 }
 
 /**
@@ -496,6 +509,29 @@ export function getAgentsSyncPresets(): Record<string, {
         name: tool.id,
         path: tool.paths.agentsExport,
         description: `${tool.displayName} agents directory`,
+      };
+    }
+  }
+
+  return presets;
+}
+
+/**
+ * Get commands sync presets (slash commands → .cursor/commands, .agent/workflows)
+ */
+export function getCommandsSyncPresets(): Record<string, {
+  name: string;
+  path: string;
+  description: string;
+}> {
+  const presets: Record<string, { name: string; path: string; description: string }> = {};
+
+  for (const tool of getToolsWithCapability('commands')) {
+    if (tool.paths.commandsExport) {
+      presets[tool.id] = {
+        name: tool.id,
+        path: tool.paths.commandsExport,
+        description: `${tool.displayName} commands/workflows directory`,
       };
     }
   }

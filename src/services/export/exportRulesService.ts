@@ -15,7 +15,6 @@ import {
   resolveAbsolutePath,
   ensureParentDirectory,
   ensureDirectory,
-  pathExists,
   getBasename,
   displayOperationSummary,
   getRulesExportPresets,
@@ -172,17 +171,7 @@ export class ExportRulesService {
         return;
       }
 
-      // Check if target exists and force is not set
-      if (await pathExists(targetPath) && !options.force) {
-        this.deps.ui.updateSpinner(
-          this.deps.t('spinner.export.skipped', { target: targetPath }),
-          'warn'
-        );
-        result.filesSkipped++;
-        this.deps.ui.stopSpinner();
-        return;
-      }
-
+      // Sempre sobrescrever para o destino ficar igual à origem (sync = espelho)
       // Export based on format
       if (target.format === 'single') {
         await ensureParentDirectory(targetPath);
